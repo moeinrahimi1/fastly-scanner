@@ -45,7 +45,6 @@ jobs:
           tar -czf fastly-scanner-macos-arm64.tar.gz fastly-scanner-macos-arm64
           # Windows
           zip -9 fastly-scanner-windows-x64.zip fastly-scanner-windows-x64.exe
-          zip -9 fastly-scanner-windows-arm64.zip fastly-scanner-windows-arm64.exe
 
       - name: Generate checksums
         run: |
@@ -64,7 +63,6 @@ jobs:
             dist/fastly-scanner-macos-x64.tar.gz
             dist/fastly-scanner-macos-arm64.tar.gz
             dist/fastly-scanner-windows-x64.zip
-            dist/fastly-scanner-windows-arm64.zip
             dist/sha256sums.txt
           draft: false
           prerelease: false
