@@ -1,0 +1,55 @@
+name: Build & Release (Bun single executable)
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps (if any)
+        run: bun install --no-save
+
+      - name: Build all targets
+        run: bun run build:all
+
+      - name: Make binaries executable (non-Windows)
+        run: |
+          chmod +x dist/smart-scan-linux-x64 || true
+          chmod +x dist/smart-scan-linux-arm64 || true
+          chmod +x dist/smart-scan-macos-x64 || true
+          chmod +x dist/smart-scan-macos-arm64 || true
+
+      - name: Generate checksums
+        run: bun run checksums
+
+      - name: List artifacts
+        run: ls -l dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/smart-scan-linux-x64
+            dist/smart-scan-linux-arm64
+            dist/smart-scan-macos-x64
+            dist/smart-scan-macos-arm64
+            dist/smart-scan-windows-x64.exe
+            dist/smart-scan-windows-arm64.exe
+            dist/sha256sums.txt
+          draft: false
+          prerelease: false
