@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smart CIDR scanner (fast):
+ * Smart CIDR scanner (fast) with Fastly fallback:
  *  A) sample a few IPs per /24 for TCP:80 -> prune dead /24s
  *  B) expand only hot /24s, then ICMP ping + port80 check
  *  C) (optional) HEAD / with Host header to verify CDN/app presence
@@ -8,10 +8,11 @@
  * Usage examples:
  *   node smart-scan.js 151.101.0.0/16
  *   node smart-scan.js --file cidrs.txt --concurrency 400 --timeout 1200 --samples-per24 3 --host yourdomain.com
+ *   node smart-scan.js            // -> auto-fetch CIDRs from https://api.fastly.com/public-ip-list
  *
  * Output:
  *   - valid.txt (IPs only, sorted by ping ascending)
- *   - valid.csv (ip,ping_ms,from_stage)  from_stage = 'sample' | 'expanded'
+ *   - valid.csv (ip,ping_ms,from_stage)
  */
 
 const fs = require("fs");
@@ -19,6 +20,7 @@ const os = require("os");
 const net = require("net");
 const { spawn } = require("child_process");
 const http = require("http");
+const https = require("https");
 
 // ---------- CLI ----------
 const args = process.argv.slice(2);
@@ -39,8 +41,8 @@ const concurrency = parseInt(getFlag("concurrency", ""), 10) || os.cpus().length
 const samplesPer24 = Math.max(1, parseInt(getFlag("samples-per24", "3"), 10)); // how many IPs to sample per /24
 const expandLimitPer24 = parseInt(getFlag("expand-limit", "256"), 10);         // how many IPs to scan in a hot /24 (<=256)
 const port = 80;
-
-// ---------- IP helpers ----------
+console.log(concurrency,'hello')
+// ---------- helpers: networking / cidr ----------
 function ipToInt(ip) { return ip.split(".").map(Number).reduce((a,b)=> (a<<8)+b); }
 function intToIp(n) { return [n>>>24,(n>>16)&255,(n>>8)&255,n&255].join("."); }
 function parseCIDR(cidr) {
@@ -51,7 +53,7 @@ function parseCIDR(cidr) {
   const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
   const network = baseInt & mask;
   const size = 2 ** (32 - bits);
-  const first = network;                // include .0 — we’ll weed out by probes anyway
+  const first = network;
   const last  = network + size - 1;
   return { first, last };
 }
@@ -64,7 +66,6 @@ function list24Blocks(cidr) {
   return blocks;
 }
 function sampleIPsIn24(blockStartInt, k) {
-  // pick k distinct IPs in .1..254; try spread across the /24
   const picks = new Set();
   const candidates = [10, 42, 77, 99, 123, 150, 180, 200, 220, 240].map(x => Math.min(254, Math.max(1,x)));
   let idx = 0;
@@ -82,6 +83,36 @@ function ipsOf24(blockStartInt, limit=256) {
     ips.push(intToIp((blockStartInt + off) >>> 0));
   }
   return ips;
+}
+
+// ---------- Fastly public IP fetch ----------
+function fetchFastlyCidrs({ timeout = 5000 } = {}) {
+  const url = "https://api.fastly.com/public-ip-list";
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: { "User-Agent": "smart-scan/1.0", "Accept": "application/json" },
+      timeout
+    }, res => {
+      if (res.statusCode !== 200) {
+        res.resume();
+        return reject(new Error(`Fastly API HTTP ${res.statusCode}`));
+      }
+      let data = "";
+      res.setEncoding("utf8");
+      res.on("data", chunk => data += chunk);
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          const v4 = Array.isArray(json.addresses) ? json.addresses : [];
+          // Ignore ipv6_addresses for this IPv4 scanner
+          if (!v4.length) return reject(new Error("Fastly API returned no IPv4 addresses"));
+          resolve(v4);
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on("error", reject);
+    req.on("timeout", () => { req.destroy(new Error("Fastly API request timed out")); });
+  });
 }
 
 // ---------- cheap TCP:80 open check ----------
@@ -155,13 +186,14 @@ function renderBar(pct) {
 }
 function Progress(total) {
   let done = 0, lastPct = -1;
+  total = Math.max(1, total);
   const tick = () => {
     done++;
     const pct = Math.floor((done*100)/total);
     if (pct !== lastPct) {
       lastPct = pct;
-      process.stdout.write("\r"+renderBar(pct));
-      if (pct === 100) process.stdout.write("\n");
+      process.stdout.write("\r"+renderBar(Math.min(100, pct)));
+      if (pct >= 100) process.stdout.write("\n");
     }
   };
   return { tick };
@@ -176,15 +208,27 @@ function Progress(total) {
     cidrs.push(...text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean));
   } else {
     const positional = args.filter(a => !a.startsWith("--"));
-    if (!positional.length) {
-      console.error("Usage: node smart-scan.js CIDR [CIDR ...]  or  --file cidrs.txt");
-      process.exit(1);
+    if (positional.length) {
+      cidrs.push(...positional);
+    } else {
+      // No file and no positional CIDRs -> fetch from Fastly API
+      console.log("No CIDR input provided; fetching from Fastly public IP list…");
+      try {
+        cidrs = await fetchFastlyCidrs({ timeout: 8000 });
+        console.log(`Fetched ${cidrs.length} CIDR blocks from Fastly.`);
+      } catch (e) {
+        console.error("Failed to fetch Fastly CIDRs:", e.message);
+        process.exit(1);
+      }
     }
-    cidrs.push(...positional);
   }
 
   // --- Stage A: sample few IPs per /24 to decide which /24 to expand
   const blocks = cidrs.flatMap(c => list24Blocks(c));
+  if (!blocks.length) {
+    console.error("No /24 blocks to scan. Exiting.");
+    process.exit(1);
+  }
   const sampleTargets = [];
   for (const b of blocks) {
     const picks = sampleIPsIn24(b, samplesPer24);
@@ -221,7 +265,7 @@ function Progress(total) {
 
   // --- Stage B: on expanded IPs, require ping OK + port 80 open (+ optional HEAD)
   const stageBTotal = expandTargets.length;
-  const stageBProgress = Progress(stageBTotal || 1);
+  const stageBProgress = Progress(stageBTotal);
   const valid = [];
   await Promise.all(expandTargets.map(ip =>
     limit(async () => {
