@@ -10,7 +10,7 @@
     "build:linux:x64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-linux-x64 --outfile=dist/fastly-scanner-linux-x64",
     "build:linux:arm64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-linux-arm64 --outfile=dist/fastly-scanner-linux-arm64",
     "build:mac:x64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-darwin-x64 --outfile=dist/fastly-scanner-macos-x64",
-    "build:mac:arm64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-darwin-arm64 --outfile=dist/fastly-scanner-macos-arm64",
+    "build:mac:arm64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --bytecode --target=bun-darwin-arm64 --outfile=dist/fastly-scanner-macos-arm64",
     "build:win:x64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-windows-x64 --outfile=dist/fastly-scanner-windows-x64.exe",
     "build:all": "bun run clean && bun run build:linux:x64 && bun run build:linux:arm64 && bun run build:mac:x64 && bun run build:mac:arm64 && bun run build:win:x64",
     "checksums": "cd dist && shasum -a 256 * > sha256sums.txt || sha256sum * > sha256sums.txt"

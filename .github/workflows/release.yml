@@ -21,24 +21,30 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install deps (if any)
+      - name: Install deps
         run: bun install --no-save
 
       - name: Build all targets
         run: bun run build:all
 
-      - name: Make binaries executable (non-Windows)
+      - name: Make macOS binaries executable
         run: |
-          chmod +x dist/fastly-scanner-linux-x64 || true
-          chmod +x dist/fastly-scanner-linux-arm64 || true
           chmod +x dist/fastly-scanner-macos-x64 || true
           chmod +x dist/fastly-scanner-macos-arm64 || true
 
+      - name: Package macOS as tar.gz
+        run: |
+          cd dist
+          tar -czf fastly-scanner-macos-x64.tar.gz fastly-scanner-macos-x64
+          tar -czf fastly-scanner-macos-arm64.tar.gz fastly-scanner-macos-arm64
+
       - name: Generate checksums
-        run: bun run checksums
+        run: |
+          cd dist
+          (sha256sum * || shasum -a 256 *) > sha256sums.txt
 
       - name: List artifacts
-        run: ls -l dist
+        run: ls -lh dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -46,10 +52,10 @@ jobs:
           files: |
             dist/fastly-scanner-linux-x64
             dist/fastly-scanner-linux-arm64
-            dist/fastly-scanner-macos-x64
-            dist/fastly-scanner-macos-arm64
             dist/fastly-scanner-windows-x64.exe
             dist/fastly-scanner-windows-arm64.exe
+            dist/fastly-scanner-macos-x64.tar.gz
+            dist/fastly-scanner-macos-arm64.tar.gz
             dist/sha256sums.txt
           draft: false
           prerelease: false
