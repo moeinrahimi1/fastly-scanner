@@ -29,10 +29,10 @@ jobs:
 
       - name: Make binaries executable (non-Windows)
         run: |
-          chmod +x dist/smart-scan-linux-x64 || true
-          chmod +x dist/smart-scan-linux-arm64 || true
-          chmod +x dist/smart-scan-macos-x64 || true
-          chmod +x dist/smart-scan-macos-arm64 || true
+          chmod +x dist/fastly-scanner-linux-x64 || true
+          chmod +x dist/fastly-scanner-linux-arm64 || true
+          chmod +x dist/fastly-scanner-macos-x64 || true
+          chmod +x dist/fastly-scanner-macos-arm64 || true
 
       - name: Generate checksums
         run: bun run checksums
@@ -44,12 +44,12 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/smart-scan-linux-x64
-            dist/smart-scan-linux-arm64
-            dist/smart-scan-macos-x64
-            dist/smart-scan-macos-arm64
-            dist/smart-scan-windows-x64.exe
-            dist/smart-scan-windows-arm64.exe
+            dist/fastly-scanner-linux-x64
+            dist/fastly-scanner-linux-arm64
+            dist/fastly-scanner-macos-x64
+            dist/fastly-scanner-macos-arm64
+            dist/fastly-scanner-windows-x64.exe
+            dist/fastly-scanner-windows-arm64.exe
             dist/sha256sums.txt
           draft: false
           prerelease: false
