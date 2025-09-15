@@ -1,4 +1,4 @@
-# Smart Scan
+# Fastly Scanner
 
 A high-performance IP range scanner written in **TypeScript** (runs with [Bun](https://bun.com/)).
 
