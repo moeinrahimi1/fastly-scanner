@@ -113,19 +113,62 @@ async function fetchFastlyCidrs({ timeout = 5000 } = {}): Promise<string[]> {
 
 // ---------- cheap TCP:80 open check ----------
 function tcpOpen(ip: string, timeout = 1000): Promise<boolean> {
-  return new Promise(resolve => {
-    const sock = net.createConnection({ host: ip, port, timeout });
+  return new Promise(async resolve => {
+    let sock: any;
     const done = (ok: boolean) => {
       try {
-        sock.destroy();
+        sock?.destroy();
       } catch {}
       resolve(ok);
     };
-    sock.once("connect", () => done(true));
-    sock.once("timeout", () => done(false));
-    sock.once("error", () => done(false));
+
+    try {
+      sock = await Bun.connect({
+        hostname: ip,
+        port,
+        timeout,
+        socket: {
+          data(socket, data) {
+            done(true);
+          },
+          open(socket) {
+            done(true);
+          },
+          close(socket) {
+            done(false);
+          },
+          drain(socket) {
+            done(false);
+          },
+          error(socket, error) {
+            // Ignore connection refused error by name/message, resolve false silently
+            if (
+              error &&
+              (error.code === "ECONNREFUSED" || error.message?.includes("connection refused"))
+            ) {
+              done(false);
+            } else {
+              // For other errors, you can choose to resolve false or rethrow.
+              done(false);
+            }
+          }
+        }
+      });
+    } catch (e: any) {
+      // If Bun.connect throws immediately (e.g. connection refused), ignore and resolve false
+      if (
+        e &&
+        (e.code === "ECONNREFUSED" || e.message?.toLowerCase().includes("connection refused"))
+      ) {
+        resolve(false);
+      } else {
+        // Unexpected error, still resolve false (or log if you want)
+        resolve(false);
+      }
+    }
   });
 }
+
 
 // ---------- optional HTTP HEAD verification ----------
 function httpHead(ip: string, hostHeaderVal: string, timeout = 1000): Promise<boolean> {
@@ -312,7 +355,7 @@ function Progress(total: number, label = "Progress") {
   const stageATotal = sampleTargets.length;
   const stageAProgress = Progress(stageATotal, "Stage A (sample)");
   const limitQ = createQueue(concurrency);
-
+  
   const hotBlocks = new Set<number>();
   await Promise.all(
     sampleTargets.map(t =>

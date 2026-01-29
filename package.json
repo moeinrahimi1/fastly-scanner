@@ -1,11 +1,13 @@
 {
   "name": "fastly-scanner",
   "private": false,
-    "bin": {
-    "fastly-scanner": "dist/fastly-scanner"
-  },
+  "version": "1",
+    "main": "src/main.js",
 
-    "scripts": {
+
+  "scripts": {
+        "start": "electron-forge start",
+    "make": "electron-forge make",
     "clean": "rm -rf dist && mkdir -p dist",
     "build:linux:x64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-linux-x64 --outfile=dist/fastly-scanner-linux-x64",
     "build:linux:arm64": "bun build src/fastly-scanner.ts --compile --minify --sourcemap=none --target=bun-linux-arm64 --outfile=dist/fastly-scanner-linux-arm64",
@@ -15,11 +17,19 @@
     "build:all": "bun run clean && bun run build:linux:x64 && bun run build:linux:arm64 && bun run build:mac:x64 && bun run build:mac:arm64 && bun run build:win:x64",
     "checksums": "cd dist && shasum -a 256 * > sha256sums.txt || sha256sum * > sha256sums.txt"
   },
-
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+        "@electron-forge/cli": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.6.0",
+        "electron-prebuilt-compile": "^8.2.0",
+        "electron": "^40.1.0"
+
+
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
   }
 }
