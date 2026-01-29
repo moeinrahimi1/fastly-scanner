@@ -61,6 +61,7 @@ $("btnStart").onclick = async () => {
   $("stats").textContent = "";
   $("progA").value = 0;
   $("progB").value = 0;
+$("btnStop").disabled = false;
 
   const config = {
     cidrs: readCidrsFromTextarea(),
@@ -77,20 +78,24 @@ $("btnStart").onclick = async () => {
   log("Config: " + JSON.stringify(config));
 
   try {
-    const result = await window.api.startScan(config);
-    lastResults = result;
-
-    $("stats").textContent =
-      `Hot /24 blocks: ${result.hotBlocks} / ${result.totalBlocks} | ` +
-      `Valid IPs: ${result.validCount}`;
-
-    $("btnSave").disabled = false;
-    log("Scan finished.");
-  } catch (e) {
-    log("Scan failed: " + (e?.message || e));
-  } finally {
-    $("btnStart").disabled = false;
+  const result = await window.api.startScan(config);
+  lastResults = result;
+  $("stats").textContent =
+    `Hot /24 blocks: ${result.hotBlocks} / ${result.totalBlocks} | Valid IPs: ${result.validCount}`;
+  $("btnSave").disabled = false;
+  log("Scan finished.");
+} catch (e) {
+  const msg = e?.message || String(e);
+  if (msg.toLowerCase().includes("cancelled")) {
+    log("Scan cancelled.");
+  } else {
+    log("Scan failed: " + msg);
   }
+} finally {
+  $("btnStart").disabled = false;
+  $("btnStop").disabled = true;
+}
+
 };
 
 $("btnSave").onclick = async () => {
@@ -116,3 +121,9 @@ window.api.onValid((v) => {
 });
 
 window.api.onLog((l) => log(l));
+$("btnStop").onclick = async () => {
+  $("btnStop").disabled = true;
+  log("Stopping scan...");
+  const ok = await window.api.stopScan();
+  log(ok ? "Stop requested." : "No scan running.");
+};

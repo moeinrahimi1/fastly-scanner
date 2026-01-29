@@ -5,6 +5,7 @@ const fs = require("fs");
 const { runSmartScan, fetchFastlyCidrs } = require("./scanner");
 
 let win = null;
+let currentScan = null;
 
 function createWindow() {
   win = new BrowserWindow({
@@ -48,21 +49,38 @@ ipcMain.handle("cidr:file:open", async () => {
 });
 
 ipcMain.handle("scan:start", async (evt, config) => {
-  // run scan in-process but async; send progress events to renderer
   const send = (channel, payload) => {
     if (!win || win.isDestroyed()) return;
     win.webContents.send(channel, payload);
   };
 
-  const result = await runSmartScan(config, {
-    onStage: (s) => send("scan:stage", s),
-    onProgress: (p) => send("scan:progress", p),
-    onValid: (v) => send("scan:valid", v),
-    onLog: (l) => send("scan:log", l)
-  });
+  // create scan state for cancellation
+  currentScan = {
+    cancelled: false
+  };
 
-  return result;
+  try {
+    const result = await runSmartScan(config, currentScan, {
+      onStage: (s) => send("scan:stage", s),
+      onProgress: (p) => send("scan:progress", p),
+      onValid: (v) => send("scan:valid", v),
+      onLog: (l) => send("scan:log", l)
+    });
+
+    return result;
+  } finally {
+    currentScan = null;
+  }
 });
+
+ipcMain.handle("scan:stop", async () => {
+  if (currentScan) {
+    currentScan.cancelled = true;
+    return true;
+  }
+  return false;
+});
+
 
 ipcMain.handle("scan:save", async (evt, { txt, csv }) => {
   const res = await dialog.showOpenDialog(win, {

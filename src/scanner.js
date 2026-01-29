@@ -4,7 +4,13 @@ const { spawn } = require("node:child_process");
 const http = require("node:http");
 
 const port = 80;
-
+function throwIfCancelled(scanState) {
+  if (scanState?.cancelled) {
+    const err = new Error("Scan cancelled by user");
+    err.code = "CANCELLED";
+    throw err;
+  }
+}
 // ---------- helpers: networking / cidr ----------
 function ipToInt(ip) {
   return ip.split(".").map(Number).reduce((a, b) => (a << 8) + b);
@@ -177,7 +183,7 @@ function createQueue(limit) {
 }
 
 // ---------- main scan ----------
-async function runSmartScan(config, hooks = {}) {
+async function runSmartScan(config, scanState, hooks = {}) {
   const {
     cidrs = [],
     hostHeader = "",
@@ -193,6 +199,8 @@ async function runSmartScan(config, hooks = {}) {
   const onLog = hooks.onLog || (() => {});
 
   // gather cidrs
+  throwIfCancelled(scanState);
+
   let finalCidrs = [...cidrs];
  if (!finalCidrs.length) {
   onLog("No CIDR input provided; fetching from Fastly public IP list…");
@@ -231,6 +239,7 @@ async function runSmartScan(config, hooks = {}) {
   }
 }
 
+throwIfCancelled(scanState);
 
   const blocks = finalCidrs.flatMap((c) => list24Blocks(c));
   if (!blocks.length) throw new Error("No /24 blocks to scan.");
@@ -267,6 +276,7 @@ async function runSmartScan(config, hooks = {}) {
       })
     )
   );
+throwIfCancelled(scanState);
 
   // expand list
   const expandTargets = [];
@@ -311,11 +321,13 @@ async function runSmartScan(config, hooks = {}) {
       })
     )
   );
+throwIfCancelled(scanState);
 
   valid.sort((a, b) => a.ms - b.ms);
 
   const txt = valid.map((v) => v.ip).join("\n");
   const csv = "ip,ping_ms\n" + valid.map((v) => `${v.ip},${v.ms.toFixed(3)}`).join("\n");
+throwIfCancelled(scanState);
 
   return {
     hotBlocks: hotBlocks.size,
