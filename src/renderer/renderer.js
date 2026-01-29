@@ -62,7 +62,9 @@ $("btnStart").onclick = async () => {
   $("progA").value = 0;
   $("progB").value = 0;
 $("btnStop").disabled = false;
-
+$("stats").textContent = "-";
+$("progAText").textContent = "-";
+$("progBText").textContent = "-";
   const config = {
     cidrs: readCidrsFromTextarea(),
     concurrency: Number($("concurrency").value),

@@ -6,75 +6,104 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <header>
-      <h1>Smart CIDR Scanner</h1>
-      <div class="row">
-        <button id="btnFetchFastly">Fetch Fastly CIDRs</button>
-        <button id="btnOpenFile">Load CIDRs from file</button>
-      </div>
-    </header>
+  <header>
+    <h1>Smart CIDR Scanner</h1>
+    <div class="row">
+      <button id="btnFetchFastly">Fetch Fastly CIDRs</button>
+      <button id="btnOpenFile">Load CIDRs from file</button>
+    </div>
+  </header>
 
-    <section class="panel">
-      <h2>Options</h2>
+  <main>
+    <div class="leftCol">
+      <section class="panel">
+        <h2>Options</h2>
 
-      <div class="grid">
-        <label>Concurrency <input id="concurrency" type="number" min="1" value="400" /></label>
-        <label>Timeout (ms) <input id="timeoutMs" type="number" min="100" value="1000" /></label>
-        <label>Samples per /24 <input id="samplesPer24" type="number" min="1" value="3" /></label>
-        <label>Expand limit /24 <input id="expandLimitPer24" type="number" min="1" max="256" value="256" /></label>
-        <label>Host header (optional) <input id="hostHeader" placeholder="example.com" /></label>
-      </div>
+        <div class="grid">
+          <label>Concurrency
+            <input id="concurrency" type="number" min="1" value="400" />
+          </label>
 
-      <label>CIDRs (one per line)</label>
-      <textarea id="cidrs" placeholder="151.101.0.0/16"></textarea>
+          <label>Timeout (ms)
+            <input id="timeoutMs" type="number" min="100" value="1000" />
+          </label>
 
-     <div class="row">
-  <button id="btnStart">Start Scan</button>
-  <button id="btnStop" disabled>Stop</button>
-  <button id="btnSave" disabled>Save valid.txt / valid.csv</button>
-</div>
+          <label>Samples per /24
+            <input id="samplesPer24" type="number" min="1" value="3" />
+          </label>
 
-    </section>
+          <label>Expand limit /24
+            <input id="expandLimitPer24" type="number" min="1" max="256" value="256" />
+          </label>
 
-    <section class="panel">
-      <h2>Fastly CIDRs</h2>
-      <div id="fastlyCount" class="muted">Not loaded</div>
-      <pre id="fastlyList"></pre>
-    </section>
+          <label>Host header (optional)
+            <input id="hostHeader" placeholder="example.com" />
+          </label>
+        </div>
 
-    <section class="panel">
-      <h2>Progress</h2>
+        <label>CIDRs (one per line)</label>
+        <textarea id="cidrs" placeholder="151.101.0.0/16"></textarea>
 
-      <div class="prog">
-        <div class="progLabel">Stage A</div>
-        <progress id="progA" value="0" max="100"></progress>
-        <div id="progAText" class="muted">-</div>
-      </div>
+        <div class="row" style="margin-top: 10px">
+          <button id="btnStart" class="primary">Start Scan</button>
+          <button id="btnStop" class="danger" disabled>Stop</button>
+          <button id="btnSave" disabled>Save valid.txt / valid.csv</button>
+        </div>
 
-      <div class="prog">
-        <div class="progLabel">Stage B</div>
-        <progress id="progB" value="0" max="100"></progress>
-        <div id="progBText" class="muted">-</div>
-      </div>
+        <div class="kpi" style="margin-top: 12px">
+          <div class="kpiBox">
+            <div class="kpiTitle">Stage A</div>
+            <div id="progAText" class="kpiValue">-</div>
+          </div>
 
-      <div class="muted" id="stats"></div>
-    </section>
+          <div class="kpiBox">
+            <div class="kpiTitle">Stage B</div>
+            <div id="progBText" class="kpiValue">-</div>
+          </div>
 
-    <section class="panel">
-      <h2>Found IPs</h2>
-      <table>
-        <thead>
-          <tr><th>IP</th><th>Ping (ms)</th></tr>
-        </thead>
-        <tbody id="validTable"></tbody>
-      </table>
-    </section>
+          <div class="kpiBox">
+            <div class="kpiTitle">Stats</div>
+            <div id="stats" class="kpiValue">-</div>
+          </div>
+        </div>
 
-    <section class="panel">
-      <h2>Logs</h2>
-      <pre id="logs"></pre>
-    </section>
+        <div class="prog">
+          <div class="progLabel">Stage A</div>
+          <progress id="progA" value="0" max="100"></progress>
+        </div>
 
-    <script src="./renderer.js"></script>
-  </body>
+        <div class="prog">
+          <div class="progLabel">Stage B</div>
+          <progress id="progB" value="0" max="100"></progress>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Found IPs</h2>
+        <table>
+          <thead>
+            <tr><th>IP</th><th>Ping (ms)</th></tr>
+          </thead>
+          <tbody id="validTable"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <div class="rightCol">
+      <section class="panel">
+        <h2>Fastly CIDRs</h2>
+        <div id="fastlyCount" class="muted">Not loaded</div>
+        <pre id="fastlyList"></pre>
+      </section>
+
+      <section class="panel">
+        <h2>Logs</h2>
+        <pre id="logs"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script src="./renderer.js"></script>
+</body>
+
 </html>
