@@ -1,6 +1,6 @@
 # Fastly Scanner
 
-A high-performance IP range scanner written in **TypeScript** (runs with [Bun](https://bun.com/)).
+A high-performance IP range scanner that scans millions of fastly ip's to found clean and working ones
 
 It was designed to scan [Fastly’s public IP ranges](https://api.fastly.com/public-ip-list) in order to discover “alive” IPv4 addresses that:
 
