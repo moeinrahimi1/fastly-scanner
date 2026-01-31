@@ -60,20 +60,8 @@ provide the app with following fastly ip ranges:
 - Samples only a few IPs per `/24` to prune dead subnets → expands only “hot” ranges.
 - ICMP ping + TCP:80 probe (plus optional HTTP `HEAD` check).
 - Concurrency scaled to CPU cores.
-- Single-color progress bar with spinner, ETA, and rate.
-- Exports results:
-  - `valid.txt` → plain list of alive IPs (sorted by ping latency).
-  - `valid.csv` → `ip,ping_ms`.
-
 ---
 
-
-cidrs.txt format must be like below format:
-
-151.101.0.0/16
-104.156.80.0/20
-
---concurrency 400 → set concurrency level
 
 --timeout 1200 → probe timeout in ms
 
