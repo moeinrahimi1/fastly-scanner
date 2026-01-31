@@ -9,9 +9,6 @@ It was designed to scan [Fastly’s public IP ranges](https://api.fastly.com/pub
 
 The goal: quickly filter out dead or unused IPs and produce a clean, sorted list of working ones.
 
-⚠️ **Disclaimer**  
-This project is provided for **educational and research purposes only**.  
-Do **not** use it for unauthorized scanning of networks or services you don’t own or operate.
 
 ---
 
@@ -29,38 +26,11 @@ Do **not** use it for unauthorized scanning of networks or services you don’t 
 
 ---
 
-## 🚀 How to Run
-
-### Prerequisites
-- Download From Release Page
-- Works on Linux, macOS, and Windows.
-
-
-
-### Usage Examples
-```bash
-1. Scan Fastly IP ranges (default)
-./fastly-scanner
-
-2. Scan specific CIDR ranges
-./fastly-scanner 151.101.0.0/16 104.156.80.0/20
-
-3. Scan from a file
-./fastly-scanner --file cidrs.txt
-
 
 cidrs.txt format must be like below format:
 
 151.101.0.0/16
 104.156.80.0/20
-
-4. Extra options
-./fastly-scanner --concurrency 400 --timeout 1200 --samples-per24 5 --host example.com
-
-
-Options:
-
---host example.com → send HTTP HEAD / with Host: example.com
 
 --concurrency 400 → set concurrency level
 
