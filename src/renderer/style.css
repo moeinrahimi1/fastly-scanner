@@ -188,6 +188,10 @@ pre {
   max-height: 220px;
   font-size: 12px;
   line-height: 1.4;
+   /* NEW: wrap long lines */
+  white-space: pre-wrap;        /* keep newlines but allow wrapping */
+  word-break: break-word;
+  overflow-y: auto;
 }
 
 .prog {
